@@ -156,7 +156,6 @@ exports.getToursWithin = catchAsyncErrors(async (req, res, next) => {
    * The equatorial radius of Earth is approximately 3,963.2 miles or 6,378.1 kilometers.
    * https://www.mongodb.com/docs/manual/core/indexes/index-types/geospatial/2d/calculate-distances/#std-label-calculate-distance-spherical-geometry
    */
-  console.log(lat, lng, ui, dis);
   const radius = ui === 'mi' ? dis / 3963.2 : dis / 6378.1;
   /**
    * $centerSphere

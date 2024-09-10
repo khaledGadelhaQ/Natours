@@ -53,7 +53,6 @@ exports.getMyTours = catchAsyncErrors(async (req, res, next) => {
   if (tours.length == 0) {
     // render an empty page with a message You have not booked any tours yet
     // TODO
-    console.log('empty List');
     res.status(200).render('error');
 
   }

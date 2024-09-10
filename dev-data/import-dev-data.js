@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const fs = require('fs');
 const dotenv = require('dotenv');
-const Tour = require('./models/tourModel');
-const Review = require('./models/reviewModel');
-const User = require('./models/userModel');
+const Tour = require('../models/tourModel');
+const Review = require('../models/reviewModel');
+const User = require('../models/userModel');
 
 dotenv.config({ path: './config.env' });
 
@@ -11,10 +11,10 @@ const DB = process.env.DATABASE.replace('<password>', process.env.DB_PASSWORD);
 
 // connecting to our database.
 mongoose.connect(DB);
-const data = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/tours.json`, 'utf-8'),
-);
 
+const data = JSON.parse(
+  fs.readFileSync(`${__dirname}/data/tours.json`, 'utf-8'),
+);
 const importTours = async () => {
   try {
     await Tour.create(data);
@@ -37,19 +37,9 @@ const deleteData = async () => {
   process.exit();
 };
 
-const removePriceIndex = async () => {
-  await Tour.collection.dropIndex('price_1');
-
-  console.log('Unique index on price field has been dropped.');
-
-  // Close the connection
-  await mongoose.connection.close();
-};
-
 const reviewData = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/reviews.json`, 'utf-8'),
+  fs.readFileSync(`${__dirname}/data/reviews.json`, 'utf-8'),
 );
-// removePriceIndex();
 const importReviews = async () => {
   try {
     await Review.create(reviewData);
@@ -61,9 +51,8 @@ const importReviews = async () => {
 };
 
 const usersData = JSON.parse(
-  fs.readFileSync(`${__dirname}/dev-data/data/users.json`, 'utf-8'),
+  fs.readFileSync(`${__dirname}/data/users.json`, 'utf-8'),
 );
-// removePriceIndex();
 const importUsers = async () => {
   try {
     await User.create(usersData);

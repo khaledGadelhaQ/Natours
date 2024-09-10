@@ -7,6 +7,7 @@ const xss = require('xss-clean');
 const mongoSanitize = require('express-mongo-sanitize');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const compression = require('compression');
 
 const AppError = require('./Utilities/appError');
 const errorHandler = require('./Controllers/errorController');
@@ -61,6 +62,8 @@ app.use('/api', limiter);
 // Data sanitization against NoSql query injection
 app.use(mongoSanitize());
 
+// Compressing text and json respond
+app.use(compression());
 // Data sanitization against XSS
 app.use(xss());
 

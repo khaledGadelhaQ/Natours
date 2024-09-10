@@ -160,11 +160,11 @@ tourSchema.pre(/^find/, function (next) {
 // });
 
 // AGGREGATION MIDDLEWARE:
-tourSchema.pre('aggregate', function (next) {
-  // this._pipeline.unshift({ $match: { ratingsAverage: { $gte: 4.5 },} });
-  console.log(this._pipeline);
-  next();
-});
+// tourSchema.pre('aggregate', function (next) {
+//   // this._pipeline.unshift({ $match: { ratingsAverage: { $gte: 4.5 },} });
+//   console.log(this._pipeline);
+//   next();
+// });
 
 const Tour = mongoose.model('Tour', tourSchema);
 
