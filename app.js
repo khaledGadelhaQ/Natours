@@ -16,11 +16,19 @@ const userRouter = require('./Routes/userRoutes');
 const viewRouter = require('./Routes/viewRoutes');
 const reviewRouter = require('./Routes/reviewRoutes');
 const bookingRouter = require('./Routes/bookingRoutes');
+const bookingController = require('./Controllers/bookingController');
 // Middlewares
 const app = express();
 
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
+
+app.post(
+  '/webhook-checkout',
+  express.raw({ type: 'application/json' }),
+  bookingController.webhookCheckout,
+);
+
 // to render html,css on the browser
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
