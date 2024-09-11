@@ -1,11 +1,12 @@
 const express = require('express');
 const viewController = require('../Controllers/viewController');
-const bookingController = require('../Controllers/bookingController');
 const authController = require('../Controllers/authController');
 
 const router = express.Router();
 
 router.use(authController.isLoggedIn);
+
+router.use(viewController.alerts);
 
 router.get(
   '/',

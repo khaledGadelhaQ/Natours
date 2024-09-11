@@ -3,6 +3,15 @@ const AppError = require('../Utilities/appError');
 const catchAsyncErrors = require('../Utilities/catchAsyncErrors');
 const Booking = require('../models/bookingModel');
 
+exports.alerts = (req, res, next) => {
+  const { alert } = req.query;
+  if (alert === 'booking') {
+    res.locals.alert =
+      "Your booking was successful! Please check your email for a confirmation. If your booking doesn't show up here immediatly, please come back later.";
+  }
+  next();
+};
+
 exports.getOverview = catchAsyncErrors(async (req, res, next) => {
   const tours = await Tour.find();
   if (!tours) {
@@ -54,7 +63,6 @@ exports.getMyTours = catchAsyncErrors(async (req, res, next) => {
     // render an empty page with a message You have not booked any tours yet
     // TODO
     res.status(200).render('error');
-
   }
   res.status(200).render('overview', {
     title: 'My Tours',
