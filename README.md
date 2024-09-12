@@ -18,7 +18,7 @@
   <a href="#installation-"> • Installation</a> <br> 
   <a href="#contributing-"> • Contributing</a> <br> 
   <a href="#future-updates-"> • Future Updates</a> <br> 
-  <a href="#acknowledgement"> • Acknowledgement</a>
+  <a href="#acknowledgement-"> • Acknowledgement</a>
 </p>
 
 ---
