@@ -26,7 +26,7 @@
 ## Key Features 📝
 
 - Authentication and Authorization
-  - Sign up, Log in, Logout, Update, and reset password.
+  - Sign up, Log in, log out, Update, and reset password.
   - A user can be either a regular user or an admin or a lead guide or a guide.
 - User profile
   - Update username, photo, email, password, and other information
