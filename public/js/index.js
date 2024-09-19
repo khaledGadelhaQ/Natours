@@ -1,6 +1,7 @@
 /* eslint-disable */
 import axios from 'axios';
 import { loginUser, logoutUser } from './login';
+import { signup } from './signup';
 import { displayMap } from './mapBox';
 import { updateData } from './updateSettings';
 import { bookTour } from './stripe';
@@ -8,6 +9,7 @@ import { showAlert } from './alerts';
 
 const mapEl = document.getElementById('map');
 const loginFormEl = document.querySelector('.form--login');
+const signupFormEL = document.querySelector('.form--signup');
 const logoutEl = document.querySelector('.nav__el--logout');
 const updateDataForm = document.querySelector('.form-user-data');
 const updatePasswordForm = document.querySelector('.form-user-settings');
@@ -23,6 +25,17 @@ if (loginFormEl) {
     const email = document.querySelector('#email').value;
     const password = document.querySelector('#password').value;
     loginUser(email, password);
+  });
+}
+
+if (signupFormEL) {
+  signupFormEL.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const name = document.querySelector('#name-singup').value;
+    const email = document.querySelector('#email-singup').value;
+    const password = document.querySelector('#password-singup').value;
+    const passwordConfirm = document.querySelector('#passwordConfirm-singup').value;
+    signup(name, email, password, passwordConfirm);
   });
 }
 
@@ -97,6 +110,6 @@ if (bookBtn) {
   });
 }
 
-if(alert){
+if (alert) {
   showAlert('success', alert, 10);
 }

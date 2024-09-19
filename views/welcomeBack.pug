@@ -1,0 +1,13 @@
+extends base
+
+block content
+  main.main
+    .login-form
+      h2.heading-secondary.ma-bt-lg Welcome back!
+      form.form.form--login
+        .form__group
+          p.heading--tertirary We found an existing account with this email.
+        .form__group
+          a.btn.btn--green(href='/login') Log in
+        .form__group
+          a.btn.btn--green.span-all-rows(href='/signup') Sign up with different email

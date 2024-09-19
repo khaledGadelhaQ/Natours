@@ -39,11 +39,23 @@ exports.getTour = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
-exports.getLoginForm = catchAsyncErrors(async (rea, res, next) => {
+exports.getLoginForm = catchAsyncErrors(async (req, res, next) => {
   res.status(200).render('login', {
     title: 'log into you account',
   });
 });
+
+exports.getSignupForm = catchAsyncErrors(async (req, res, next) => {
+  res.status(200).render('signup', {
+    title: 'create your account',
+  });
+});
+
+exports.getWelcomeBack = catchAsyncErrors(async (req, res, next)=>{
+  res.status(200).render('welcomeBack', {
+    title: 'Welcome Back!',
+  });
+})
 
 exports.getAccount = catchAsyncErrors(async (req, res, next) => {
   res.status(200).render('account', {

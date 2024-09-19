@@ -36,6 +36,17 @@ const createSendToken = (statusCode, user, res) => {
 
 ////-------------> AUTHENTICATION <-------------- ////
 
+exports.checkUserExist = catchAsync(async (req, res, next) => {
+  const user = await User.findOne({ email: req.body.email });
+  if (!user) return next();
+  // users exist
+  res.locals.email = req.body.email;
+  res.status(200).json({
+    status: 'fail',
+    redirect: '/welcomeBack'
+  });
+});
+
 exports.signUp = catchAsync(async (req, res, next) => {
   const user = await User.create({
     name: req.body.name,
@@ -74,6 +85,7 @@ exports.logout = catchAsync(async (req, res, next) => {
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
+  console.log(`Protect middleware hit on ${req.originalUrl}`);
   // 1) Get the token from the req headers and check if it a valid one or not
   let token;
   if (
@@ -123,7 +135,7 @@ exports.isLoggedIn = catchAsync(async (req, res, next) => {
     return next();
   }
   res.locals.user = curUser; // to use in pug templates
-  req.user = curUser; 
+  req.user = curUser;
   next();
 });
 
@@ -141,7 +153,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
   // we send the token with email
   const resetUrl = `${req.protocol}://${req.get('host')}/api/users/resetPassword/${token}`;
   // const message = `You are receiving this because you (or someone else)
-  //  have requested to reset your password. Please click on the following 
+  //  have requested to reset your password. Please click on the following
   //  link, or paste it into your browser to complete the process: ${resetUrl}`;
 
   try {
@@ -151,7 +163,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     //     'Your token will expire in 1 hour, please reset your passwrod before that',
     //   message,
     // });
-    await new Email(user,resetUrl).sendResetPassword()
+    await new Email(user, resetUrl).sendResetPassword();
     res.status(200).json({
       status: 'success',
       message: 'Token sent in the email',

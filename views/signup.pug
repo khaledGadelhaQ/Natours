@@ -1,20 +1,21 @@
 extends base
 
-block content 
-  .login-form
-    h2.heading-secondary.ma-bt-lg Create your account!
-    form.form.form--signup
-      .form__group
-        label.form__label(for='name') Your name
-        input#name.form__input(type='text', placeholder='', required='')
-      .form__group
-        label.form__label(for='email') Email address
-        input#email.form__input(type='email', placeholder='you@example.com', required='')
-      .form__group.ma-bt-md
-        label.form__label(for='password') Password
-        input#password.form__input(type='password', placeholder='••••••••', required='', minlength='8')
-      .form__group.ma-bt-md
-        label.form__label(for='passwordConfirm') Confirm password
-        input#passwordConfirm.form__input(type='password', placeholder='••••••••', required='', minlength='8')
-      .form__group
-        button.btn.btn--green Sign up
+block content
+  main.main 
+    .login-form
+      h2.heading-secondary.ma-bt-lg Create your account!
+      form.form.form--signup
+        .form__group
+          label.form__label(for='name-singup') Your name
+          input#name-singup.form__input(type='text', placeholder='Khaled Gadelhaq', required)
+        .form__group
+          label.form__label(for='email-singup') Email address
+          input#email-singup.form__input(type='email', placeholder='you@example.com', required)
+        .form__group.ma-bt-md
+          label.form__label(for='password-singup') Password
+          input#password-singup.form__input(type='password', placeholder='••••••••', required, minlength='8')
+        .form__group.ma-bt-md
+          label.form__label(for='passwordConfirm-singup') Confirm password
+          input#passwordConfirm-singup.form__input(type='password', placeholder='••••••••', required, minlength='8')
+        .form__group
+          button.btn.btn--green Sign up
