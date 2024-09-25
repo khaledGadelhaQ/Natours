@@ -40,9 +40,9 @@ exports.checkUserExist = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
   if (!user) return next();
   // users exist
-  res.locals.email = req.body.email;
   res.status(200).json({
     status: 'fail',
+    message: 'there is an existing account with this email. Log in instead.',
     redirect: '/welcomeBack'
   });
 });
@@ -157,12 +157,6 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
   //  link, or paste it into your browser to complete the process: ${resetUrl}`;
 
   try {
-    // sendEmail({
-    //   email: user.email,
-    //   subject:
-    //     'Your token will expire in 1 hour, please reset your passwrod before that',
-    //   message,
-    // });
     await new Email(user, resetUrl).sendResetPassword();
     res.status(200).json({
       status: 'success',
