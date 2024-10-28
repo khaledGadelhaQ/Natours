@@ -43,9 +43,19 @@ exports.checkUserExist = catchAsync(async (req, res, next) => {
   res.status(200).json({
     status: 'fail',
     message: 'there is an existing account with this email. Log in instead.',
-    redirect: '/welcomeBack'
+    redirect: '/welcomeBack',
   });
 });
+
+// exports.checkValidPassword = catchAsync(async (req, res, next) => {
+//   const { password, passwordConfirm } = req.body;
+//   if (password === passwordConfirm) return next();
+//   return new AppError("Passwords don't match!", 403);
+//   // res.status(403).json({
+//   //   status: 'fail',
+//   //   message: "Passwords don't match!",
+//   // });
+// });
 
 exports.signUp = catchAsync(async (req, res, next) => {
   const user = await User.create({
@@ -55,14 +65,71 @@ exports.signUp = catchAsync(async (req, res, next) => {
     password: req.body.password,
     passwordConfirm: req.body.passwordConfirm,
   });
-  // sending a welcome email to the user
-  let url = `${req.protocol}://127.0.0.1:5000/me`;
+  // creating a token for the user (Expires in 10 mintues)
+  const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+    expiresIn: '10m',
+  });
+  // creating the verification email
+  let verificationEmail = `${req.protocol}://127.0.0.1:5000/api/users/verify-email/${token}`;
   if (process.env.NODE_ENV === 'production') {
-    url = `${req.protocol}://${req.get('host')}/me`;
+    verificationEmail = `${req.protocol}://${req.get('host')}/api/users/verify-email/${token}`;
   }
-  await new Email(user, url).sendWelcome();
-  createSendToken(201, user, res);
+  // sending the verification email to the user
+  await new Email(user, verificationEmail).sendVerifyEmail();
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Please verify your email address to get full access!',
+  });
 });
+
+exports.verifyEmail = catchAsync(async (req, res, next) => {
+  const { token } = req.params;
+  try {
+    // Verify the token
+    const encoded = await jwt.verify(token, process.env.JWT_SECRET);
+    // Find the user by the encoded userId
+    const user = await User.findById(encoded.userId);
+
+    if (!user) {
+      return next(new AppError('User not found', 400));
+    }
+
+    if (user.isVerified) {
+      return next(new AppError('User already verified', 400));
+    }
+
+    user.isVerified = true;
+    await user.save();
+
+    let url = `${req.protocol}://127.0.0.1:5000/me`;
+    if (process.env.NODE_ENV === 'production') {
+      url = `${req.protocol}://${req.get('host')}/me`;
+    }
+    await new Email(user, url).sendWelcome();
+
+    // Check if the request expects an HTML response
+    if (req.headers['accept'] && req.headers['accept'].includes('text/html')) {
+      return res.status(200).render('verificationSuccess');
+    } else {
+      // Otherwise, return JSON response
+      return res.status(200).json({
+        status: 'success',
+        message: 'Email verified successfully',
+      });
+    }
+  } catch (error) {
+    if (req.headers['accept'] && req.headers['accept'].includes('text/html')) {
+      return res.status(200).render('linkExpired');
+    } else {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Verification link expired or invalid',
+      });
+    }
+  }
+});
+
 
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
@@ -76,6 +143,9 @@ exports.login = catchAsync(async (req, res, next) => {
   if (!user || !(await user.verifyPassword(password))) {
     return next(new AppError('Wrong email address or password', 401));
   }
+  if (!user.isVerified) {
+    return next(new AppError('Please verify your email to log in', 403));
+  }
   createSendToken(200, user, res);
 });
 
@@ -85,7 +155,6 @@ exports.logout = catchAsync(async (req, res, next) => {
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
-  console.log(`Protect middleware hit on ${req.originalUrl}`);
   // 1) Get the token from the req headers and check if it a valid one or not
   let token;
   if (

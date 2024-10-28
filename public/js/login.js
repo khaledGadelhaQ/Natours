@@ -20,7 +20,7 @@ export const loginUser = async (email, password) => {
       }, 800);
     }
   } catch (err) {
-    showAlert('error', 'Wrong Email or Password!');
+    showAlert('error', err.response.data.message);
   }
 };
 

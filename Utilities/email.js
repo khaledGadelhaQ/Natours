@@ -54,6 +54,10 @@ class Email {
     await this.transporter().sendMail(mailOptions);
   }
 
+  async sendVerifyEmail(){
+    await this.send('verifyEmail', 'Verify your email!');
+  }
+
   async sendWelcome() {
     await this.send('welcome', 'Welcome to Natours Family!');
   }

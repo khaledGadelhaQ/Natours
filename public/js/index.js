@@ -25,6 +25,8 @@ if (loginFormEl) {
     const email = document.querySelector('#email').value;
     const password = document.querySelector('#password').value;
     loginUser(email, password);
+    document.querySelector('#email').value= '';
+    document.querySelector('#password').value= '';
   });
 }
 
@@ -36,6 +38,10 @@ if (signupFormEL) {
     const password = document.querySelector('#password-singup').value;
     const passwordConfirm = document.querySelector('#passwordConfirm-singup').value;
     signup(name, email, password, passwordConfirm);
+    document.querySelector('#name-singup').value= '';
+    document.querySelector('#email-singup').value= '';
+    document.querySelector('#password-singup').value= '';
+    document.querySelector('#passwordConfirm-singup').value= '';
   });
 }
 
