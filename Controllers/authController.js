@@ -8,33 +8,77 @@ const Email = require('../Utilities/email');
 
 const getToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN,
+    expiresIn: process.env.JWT_EXPIRES_IN * 1000,
   });
 
-const createSendToken = (statusCode, user, res) => {
+const getRefreshToken = (id) =>
+  jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
+    expiresIn: process.env.JWT_REFRESH_EXPIRES_IN * 1000
+    ,
+  });
+
+const createSendToken = catchAsync(async (statusCode, user, res) => {
+  // Generate access and refresh tokens
   const token = getToken(user._id);
+  const refreshToken = getRefreshToken(user._id);
+  // Save refresh token in the database
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  // Cookie options
   const cookieOptions = {
-    expires: new Date(
-      Date.now() + process.env.JWT_COOKIE_EXPIRES_IN * 24 * 60 * 60 * 1000,
-    ),
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
   };
-  if (process.env.NODE_ENV === 'production') cookieOptions.secure = true;
-  res.cookie('jwt', token, cookieOptions);
-  // setting the password to undefined so that it won't appear when creating new user
-  // don't worry we are not saving it in the DB 😂😂
+
+  // Set cookies with different expiration times for access and refresh tokens
+  res.cookie('jwt', token, {
+    ...cookieOptions,
+    expires: new Date(Date.now() + process.env.JWT_EXPIRES_IN * 1000), // e.g., access token expiry: 1 hour
+  });
+
+  res.cookie('refreshToken', refreshToken, {
+    ...cookieOptions,
+    expires: new Date(Date.now() + process.env.JWT_REFRESH_EXPIRES_IN * 1000), // e.g., refresh token expiry: 1 month
+  });
+
+  // Remove password from response data
   user.password = undefined;
 
   res.status(statusCode).json({
     status: 'success',
     token,
-    data: {
-      user,
-    },
+    user,
   });
-};
+});
 
 ////-------------> AUTHENTICATION <-------------- ////
+
+exports.refreshToken = catchAsync(async (req, res, next) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    return next(new AppError('Refresh token required', 400));
+  }
+
+  try {
+    const encoded = await promisify(jwt.verify)(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET,
+    );
+
+    const user = await User.findById(encoded.id);
+    if (!user || user.refreshToken != refreshToken) {
+      return next(new AppError('Invalid refresh token', 401));
+    }
+
+    await createSendToken(200, user, res);
+  } catch (err) {
+    return next(
+      new AppError('Refresh token expired or invalid, Log in again!', 403),
+    );
+  }
+});
 
 exports.checkUserExist = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
@@ -46,16 +90,6 @@ exports.checkUserExist = catchAsync(async (req, res, next) => {
     redirect: '/welcomeBack',
   });
 });
-
-// exports.checkValidPassword = catchAsync(async (req, res, next) => {
-//   const { password, passwordConfirm } = req.body;
-//   if (password === passwordConfirm) return next();
-//   return new AppError("Passwords don't match!", 403);
-//   // res.status(403).json({
-//   //   status: 'fail',
-//   //   message: "Passwords don't match!",
-//   // });
-// });
 
 exports.signUp = catchAsync(async (req, res, next) => {
   const user = await User.create({
@@ -130,7 +164,6 @@ exports.verifyEmail = catchAsync(async (req, res, next) => {
   }
 });
 
-
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
   // 1) check if there is a email and password in the body
@@ -146,44 +179,69 @@ exports.login = catchAsync(async (req, res, next) => {
   if (!user.isVerified) {
     return next(new AppError('Please verify your email to log in', 403));
   }
-  createSendToken(200, user, res);
+  await createSendToken(200, user, res);
 });
 
 exports.logout = catchAsync(async (req, res, next) => {
   res.clearCookie('jwt');
+  res.clearCookie('refreshToken');
   res.status(200).json({ status: 'success' });
 });
 
 exports.protect = catchAsync(async (req, res, next) => {
-  // 1) Get the token from the req headers and check if it a valid one or not
-  let token;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
-    token = req.headers.authorization.split(' ')[1];
-  } else if (req.cookies.jwt) {
-    token = req.cookies.jwt;
-  }
+  let accessToken = req.cookies.jwt;
+  let refreshToken = req.cookies.refreshToken;
 
-  if (!token) {
+  if (!accessToken && refreshToken) {
     return next(
-      new AppError('Your are not logged in! Please log in to get access', 401),
+      new AppError(
+        'Your session has expired. Please use the refresh token to get a new access token.',
+        401,
+      ),
     );
   }
-  // 2) Verification token
-  const encoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
-  // 3) check user still exits and has not been deleted
-  const curUser = await User.findById(encoded.id);
-  if (!curUser) {
-    return next(new AppError('The user does not exists anymore!'));
+
+  if (!refreshToken) {
+    return next(
+      new AppError('You are not logged in! Please log in to get access.', 401),
+    );
   }
-  // 4) check if the user changed the password or not
-  if (curUser.passwordChangedAt(encoded.iat)) {
-    return next(new AppError('The password has changed! Log in again', 401));
+
+  try {
+    // 2) Verify the access token
+    const decoded = await promisify(jwt.verify)(accessToken, process.env.JWT_SECRET);
+    // 3) Check if the user exists
+    const currentUser = await User.findById(decoded.id);
+    if (!currentUser) {
+      return next(new AppError('The user does not exist anymore.', 401));
+    }
+    // 4) Check if the user changed the password after the token was issued
+    if (currentUser.passwordChangedAt(decoded.iat)) {
+      return next(
+        new AppError(
+          'User recently changed password! Please log in again.',
+          401,
+        ),
+      );
+    }
+
+    res.locals.user = currentUser; // to use in pug templates
+    res.user = currentUser;
+    req.user = currentUser;
+    next();
+  } catch (err) {
+    // Token expired or invalid
+    if (err.name === 'TokenExpiredError') {
+      return next(
+        new AppError(
+          'Your session has expired. Please use the refresh token to get a new access token.',
+          401,
+        ),
+      );
+    }
+
+    return next(new AppError('Invalid token. Please log in again.', 401));
   }
-  req.user = curUser;
-  next();
 });
 
 exports.isLoggedIn = catchAsync(async (req, res, next) => {
@@ -263,7 +321,7 @@ exports.resetPassword = catchAsync(async (req, res, next) => {
   user.resetPasswordExpires = undefined;
 
   await user.save();
-  createSendToken(200, user, res);
+  await createSendToken(200, user, res);
 });
 
 exports.updatePassword = catchAsync(async (req, res, next) => {
@@ -276,7 +334,7 @@ exports.updatePassword = catchAsync(async (req, res, next) => {
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm;
   await user.save();
-  createSendToken(200, user, res);
+  await createSendToken(200, user, res);
 });
 
 ////-------------> AUTHORIZATION <-------------- ////

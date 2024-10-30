@@ -75,11 +75,11 @@ app.use(compression());
 // Data sanitization against XSS
 app.use(xss());
 
-app.use('/', viewRouter);
 app.use('/api/tours', tourRouter);
 app.use('/api/users', userRouter);
 app.use('/api/reviews', reviewRouter);
 app.use('/api/bookings', bookingRouter);
+app.use('/', viewRouter);
 
 // Body parser, so we can user req.body
 // if the request route is not found in the above route handler
