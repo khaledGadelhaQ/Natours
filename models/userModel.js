@@ -47,6 +47,10 @@ const userSchema = new Schema(
         message: "Passwords don't match",
       },
     },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
     passwordResetToken: String,
     passwordResetExpires: Date,
     active: {
